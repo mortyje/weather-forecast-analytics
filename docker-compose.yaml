@@ -34,12 +34,8 @@ services:
     restart: "no"
 
     command:
-      - --city-id
-      - moscow
-      - --latitude
-      - "55.75"
-      - --longitude
-      - "37.62"
+      - --locations
+      - /app/config/locations.json
 
 volumes:
   postgres_data:

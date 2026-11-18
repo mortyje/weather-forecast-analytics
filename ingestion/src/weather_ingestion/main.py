@@ -1,11 +1,12 @@
 import argparse
 import json
-import math
 import sys
 from datetime import UTC, datetime
+from pathlib import Path
 
 import httpx
 
+from weather_ingestion.locations import load_locations
 from weather_ingestion.open_meteo import (
     FORECAST_URL,
     OpenMeteoClient,
@@ -14,55 +15,71 @@ from weather_ingestion.open_meteo import (
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Collect weather forecasts from Open-Meteo")
+    parser = argparse.ArgumentParser(
+        description="Collect weather forecasts from Open-Meteo"
+    )
 
-    parser.add_argument("--city-id", required=True)
-    parser.add_argument("--latitude", type=float, required=True)
-    parser.add_argument("--longitude", type=float, required=True)
+    parser.add_argument(
+        "--locations",
+        type=Path,
+        default=Path("/app/config/locations.json"),
+    )
 
     args = parser.parse_args()
 
-    if not math.isfinite(args.latitude) or not -90 <= args.latitude <= 90:
-        parser.error("Latitude must be between -90 and 90")
-
-    if not math.isfinite(args.longitude) or not -180 <= args.longitude <= 180:
-        parser.error("Longitude must be between -180 and 180")
-
-    requested_at = datetime.now(UTC).isoformat()
-
     try:
-        with httpx.Client(
-            timeout=15.0,
-            headers={"User-Agent": "weather-forecast-analytics/0.1"},
-        ) as http_client:
-            client = OpenMeteoClient(http_client)
+        locations = load_locations(args.locations)
+    except (OSError, ValueError) as exc:
+        parser.exit(2, f"Invalid locations config: {exc}\n")
 
-            forecast = client.get_forecast(
-                latitude=args.latitude,
-                longitude=args.longitude,
-            )
-    except (httpx.HTTPError, ValueError) as exc:
-        parser.exit(1, f"Failed to collect forecast: {exc}\n")
+    failed_locations = 0
 
-    collected_at = datetime.now(UTC).isoformat()
+    with httpx.Client(
+        timeout=15.0,
+        headers={"User-Agent": "weather-forecast-analytics/0.1"},
+    ) as http_client:
+        client = OpenMeteoClient(http_client)
 
-    message = {
-        "source": "open_meteo",
-        "city_id": args.city_id,
-        "requested_at_utc": requested_at,
-        "collected_at_utc": collected_at,
-        "request": {
-            "url": FORECAST_URL,
-            "parameters": build_forecast_params(
-                args.latitude,
-                args.longitude,
-            ),
-        },
-        "payload": forecast,
-    }
+        for location in locations:
+            requested_at = datetime.now(UTC).isoformat()
 
-    json.dump(message, sys.stdout, ensure_ascii=False)
-    sys.stdout.write("\n")
+            try:
+                forecast = client.get_forecast(
+                    latitude=location.latitude,
+                    longitude=location.longitude,
+                )
+            except (httpx.HTTPError, ValueError) as exc:
+                failed_locations += 1
+                print(
+                    f"Failed to collect forecast for {location.id}: {exc}",
+                    file=sys.stderr,
+                )
+                continue
+
+            collected_at = datetime.now(UTC).isoformat()
+
+            message = {
+                "source": "open_meteo",
+                "city_id": location.id,
+                "requested_at_utc": requested_at,
+                "collected_at_utc": collected_at,
+                "request": {
+                    "url": FORECAST_URL,
+                    "parameters": build_forecast_params(
+                        location.latitude,
+                        location.longitude,
+                    ),
+                },
+                "payload": forecast,
+            }
+
+            print(json.dumps(message, ensure_ascii=False))
+
+    if failed_locations:
+        parser.exit(
+            1,
+            f"Forecast collection failed for {failed_locations} location(s)\n",
+        )
 
 
 if __name__ == "__main__":
