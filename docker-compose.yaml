@@ -1,4 +1,3 @@
-
 name: weather-forecast-analytics
 
 services:
@@ -23,6 +22,24 @@ services:
       timeout: 5s
       retries: 5
       start_period: 20s
+
+  ingestion:
+    build:
+      context: ./ingestion
+      target: runtime
+
+    profiles:
+      - jobs
+
+    restart: "no"
+
+    command:
+      - --city-id
+      - moscow
+      - --latitude
+      - "55.75"
+      - --longitude
+      - "37.62"
 
 volumes:
   postgres_data:
