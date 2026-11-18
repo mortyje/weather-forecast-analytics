@@ -1,0 +1,32 @@
+[
+  {
+    "id": "moscow",
+    "name": "Москва",
+    "latitude": 55.75,
+    "longitude": 37.62
+  },
+  {
+    "id": "saint_petersburg",
+    "name": "Санкт-Петербург",
+    "latitude": 59.93,
+    "longitude": 30.31
+  },
+  {
+    "id": "nizhny_novgorod",
+    "name": "Нижний Новгород",
+    "latitude": 56.33,
+    "longitude": 44.00
+  },
+  {
+    "id": "kazan",
+    "name": "Казань",
+    "latitude": 55.79,
+    "longitude": 49.12
+  },
+  {
+    "id": "yekaterinburg",
+    "name": "Екатеринбург",
+    "latitude": 56.84,
+    "longitude": 60.61
+  }
+]
