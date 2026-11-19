@@ -12,6 +12,8 @@ from weather_ingestion.kafka_publisher import KafkaPublisher
 from weather_ingestion.locations import load_locations
 from weather_ingestion.open_meteo import (
     FORECAST_URL,
+    SOURCE_ID,
+    SOURCE_NAME,
     OpenMeteoClient,
     build_forecast_params,
 )
@@ -74,8 +76,17 @@ def main() -> None:
                 collected_at = datetime.now(UTC).isoformat()
 
                 message = {
-                    "source": "open_meteo",
+                    "schema_version": 2,
+                    "source": SOURCE_ID,
+                    "source_name": SOURCE_NAME,
                     "city_id": location.id,
+                    "location": {
+                        "id": location.id,
+                        "name": location.name,
+                        "latitude": location.latitude,
+                        "longitude": location.longitude,
+                        "timezone": location.timezone,
+                    },
                     "requested_at_utc": requested_at,
                     "collected_at_utc": collected_at,
                     "request": {
@@ -89,7 +100,7 @@ def main() -> None:
                 }
 
                 if publisher is None:
-                    print(json.dumps(message, ensure_ascii=False))
+                    print(json.dumps(message, ensure_ascii=False, allow_nan=False))
                 else:
                     publisher.publish(message)
 

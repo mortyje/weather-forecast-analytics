@@ -1,0 +1,48 @@
+version: 2
+
+models:
+  - name: core_locations
+    description: Актуальный справочник локаций Core DWH.
+
+    columns:
+      - name: location_id
+        data_tests:
+          - not_null
+          - unique
+
+      - name: name
+        data_tests:
+          - not_null
+
+      - name: latitude
+        data_tests:
+          - not_null
+
+      - name: longitude
+        data_tests:
+          - not_null
+
+      - name: timezone
+        data_tests:
+          - not_null
+
+      - name: last_seen_at
+        data_tests:
+          - not_null
+
+  - name: core_weather_sources
+    description: Справочник источников погодных данных.
+
+    columns:
+      - name: source_id
+        data_tests:
+          - not_null
+          - unique
+
+      - name: name
+        data_tests:
+          - not_null
+
+      - name: last_seen_at
+        data_tests:
+          - not_null

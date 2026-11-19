@@ -30,11 +30,31 @@ SELECT
     offset_id,
     message_key,
 
+    COALESCE(
+        (event_data ->> 'schema_version')::INTEGER,
+        1
+    ) AS schema_version,
+
     event_data ->> 'source' AS source_id,
+    event_data ->> 'source_name' AS source_name,
     event_data ->> 'city_id' AS city_id,
 
-    (event_data ->> 'requested_at_utc')::TIMESTAMPTZ AS requested_at,
-    (event_data ->> 'collected_at_utc')::TIMESTAMPTZ AS collected_at,
+    event_data #>> '{location,id}' AS location_id,
+    event_data #>> '{location,name}' AS location_name,
+
+    (event_data #>> '{location,latitude}')::NUMERIC(9,6)
+        AS location_latitude,
+
+    (event_data #>> '{location,longitude}')::NUMERIC(9,6)
+        AS location_longitude,
+
+    event_data #>> '{location,timezone}' AS location_timezone,
+
+    (event_data ->> 'requested_at_utc')::TIMESTAMPTZ
+        AS requested_at,
+
+    (event_data ->> 'collected_at_utc')::TIMESTAMPTZ
+        AS collected_at,
 
     (event_data #>> '{request,parameters,latitude}')::NUMERIC(9,6)
         AS requested_latitude,

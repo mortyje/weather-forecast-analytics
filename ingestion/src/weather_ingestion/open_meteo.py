@@ -4,6 +4,9 @@ import httpx
 
 FORECAST_URL = "https://api.open-meteo.com/v1/forecast"
 
+SOURCE_ID = "open_meteo"
+SOURCE_NAME = "Open-Meteo"
+
 HOURLY_VARIABLES = (
     "temperature_2m",
     "relative_humidity_2m",

@@ -2,6 +2,7 @@ import json
 import math
 from dataclasses import dataclass
 from pathlib import Path
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 
 @dataclass(frozen=True, slots=True)
@@ -10,6 +11,7 @@ class Location:
     name: str
     latitude: float
     longitude: float
+    timezone: str
 
 
 def is_valid_coordinate(value: object, minimum: float, maximum: float) -> bool:
@@ -37,6 +39,7 @@ def load_locations(path: Path) -> list[Location]:
         name = item.get("name")
         latitude = item.get("latitude")
         longitude = item.get("longitude")
+        timezone = item.get("timezone")
 
         if not isinstance(location_id, str) or not location_id.strip():
             raise ValueError("Location must have a non-empty id")
@@ -53,12 +56,23 @@ def load_locations(path: Path) -> list[Location]:
         if not is_valid_coordinate(longitude, -180, 180):
             raise ValueError(f"Invalid longitude for location: {location_id}")
 
+        if not isinstance(timezone, str) or not timezone.strip():
+            raise ValueError(f"Missing timezone for location: {location_id}")
+
+        try:
+            ZoneInfo(timezone)
+        except (ZoneInfoNotFoundError, ValueError) as exc:
+            raise ValueError(
+                f"Invalid timezone for location: {location_id}"
+            ) from exc
+
         locations.append(
             Location(
                 id=location_id,
                 name=name,
                 latitude=float(latitude),
                 longitude=float(longitude),
+                timezone=timezone,
             )
         )
 

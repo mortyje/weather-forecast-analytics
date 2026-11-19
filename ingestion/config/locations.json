@@ -3,30 +3,35 @@
     "id": "moscow",
     "name": "Москва",
     "latitude": 55.75,
-    "longitude": 37.62
+    "longitude": 37.62,
+    "timezone": "Europe/Moscow"
   },
   {
     "id": "saint_petersburg",
     "name": "Санкт-Петербург",
     "latitude": 59.93,
-    "longitude": 30.31
+    "longitude": 30.31,
+    "timezone": "Europe/Moscow"
   },
   {
     "id": "nizhny_novgorod",
     "name": "Нижний Новгород",
     "latitude": 56.33,
-    "longitude": 44.00
+    "longitude": 44.00,
+    "timezone": "Europe/Moscow"
   },
   {
     "id": "kazan",
     "name": "Казань",
     "latitude": 55.79,
-    "longitude": 49.12
+    "longitude": 49.12,
+    "timezone": "Europe/Moscow"
   },
   {
     "id": "yekaterinburg",
     "name": "Екатеринбург",
     "latitude": 56.84,
-    "longitude": 60.61
+    "longitude": 60.61,
+    "timezone": "Asia/Yekaterinburg"
   }
 ]

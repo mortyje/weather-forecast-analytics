@@ -14,3 +14,10 @@ models:
 
     intermediate:
       +materialized: view
+
+    core:
+      +materialized: incremental
+      +incremental_strategy: merge
+      +schema: core
+      +on_schema_change: fail
+      +full_refresh: false
