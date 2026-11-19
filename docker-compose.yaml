@@ -23,10 +23,19 @@ x-airflow-common: &airflow-common
 
     AIRFLOW__API__BASE_URL: http://localhost:8080
 
+    DBT_HOST: postgres
+    DBT_DB_NAME: ${POSTGRES_DB:?POSTGRES_DB is required}
+    DBT_USER: ${POSTGRES_USER:?POSTGRES_USER is required}
+    DBT_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+
+    DBT_ENGINE_TARGET_PATH: /tmp/dbt-target
+    DBT_ENGINE_LOG_PATH: /tmp/dbt-logs
+
   volumes:
     - ./airflow/dags:/opt/airflow/dags:ro
     - airflow_logs:/opt/airflow/logs
     - airflow_auth:/opt/airflow/auth
+    - ./dbt:/opt/airflow/dbt:ro
 
 
 services:

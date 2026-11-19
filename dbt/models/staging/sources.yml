@@ -1,0 +1,27 @@
+version: 2
+
+sources:
+  - name: weather_raw
+    schema: raw
+    description: Исходные события, загруженные из Kafka.
+
+    tables:
+      - name: forecast_events
+        description: Сырые сообщения с прогнозами погоды.
+
+        columns:
+          - name: topic
+            data_tests:
+              - not_null
+
+          - name: partition_id
+            data_tests:
+              - not_null
+
+          - name: offset_id
+            data_tests:
+              - not_null
+
+          - name: payload
+            data_tests:
+              - not_null
