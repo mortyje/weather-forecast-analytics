@@ -33,9 +33,9 @@ x-airflow-common: &airflow-common
 
   volumes:
     - ./airflow/dags:/opt/airflow/dags:ro
+    - ./dbt:/opt/airflow/dbt:ro
     - airflow_logs:/opt/airflow/logs
     - airflow_auth:/opt/airflow/auth
-    - ./dbt:/opt/airflow/dbt:ro
 
 
 services:
