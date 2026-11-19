@@ -1,6 +1,102 @@
 name: weather-forecast-analytics
 
+
+x-airflow-common: &airflow-common
+  build:
+    context: ./airflow
+
+  user: "${AIRFLOW_UID:-50000}:0"
+
+  environment:
+    AIRFLOW__CORE__EXECUTOR: LocalExecutor
+    AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+
+    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow_user:${AIRFLOW_DB_PASSWORD:?AIRFLOW_DB_PASSWORD is required}@postgres:5432/airflow_meta
+
+    AIRFLOW__CORE__FERNET_KEY: ${AIRFLOW_FERNET_KEY:?AIRFLOW_FERNET_KEY is required}
+    AIRFLOW__API_AUTH__JWT_SECRET: ${AIRFLOW_JWT_SECRET:?AIRFLOW_JWT_SECRET is required}
+    AIRFLOW__API__SECRET_KEY: ${AIRFLOW_API_SECRET_KEY:?AIRFLOW_API_SECRET_KEY is required}
+
+    AIRFLOW__CORE__EXECUTION_API_SERVER_URL: http://airflow-api-server:8080/execution/
+    AIRFLOW__CORE__SIMPLE_AUTH_MANAGER_USERS: "admin:admin"
+    AIRFLOW__CORE__SIMPLE_AUTH_MANAGER_PASSWORDS_FILE: /opt/airflow/auth/passwords.json
+
+    AIRFLOW__API__BASE_URL: http://localhost:8080
+
+  volumes:
+    - ./airflow/dags:/opt/airflow/dags:ro
+    - airflow_logs:/opt/airflow/logs
+    - airflow_auth:/opt/airflow/auth
+
+
 services:
+  airflow-db-init:
+    image: postgres:17.12
+    restart: "no"
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+    environment:
+      PGHOST: postgres
+      PGPORT: "5432"
+      PGDATABASE: ${POSTGRES_DB:?POSTGRES_DB is required}
+      PGUSER: ${POSTGRES_USER:?POSTGRES_USER is required}
+      PGPASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      AIRFLOW_DB_PASSWORD: ${AIRFLOW_DB_PASSWORD:?AIRFLOW_DB_PASSWORD is required}
+
+    volumes:
+      - ./airflow/db/init-airflow.sh:/scripts/init-airflow.sh:ro
+
+    entrypoint: ["/bin/sh", "/scripts/init-airflow.sh"]
+
+  airflow-init:
+    <<: *airflow-common
+    restart: "no"
+
+    depends_on:
+      airflow-db-init:
+        condition: service_completed_successfully
+
+    command: ["db", "migrate"]
+
+  airflow-api-server:
+    <<: *airflow-common
+    restart: unless-stopped
+
+    depends_on:
+      airflow-init:
+        condition: service_completed_successfully
+
+    ports:
+      - "127.0.0.1:8080:8080"
+
+    command: ["api-server"]
+
+  airflow-scheduler:
+    <<: *airflow-common
+    restart: unless-stopped
+
+    depends_on:
+      airflow-init:
+        condition: service_completed_successfully
+      airflow-api-server:
+        condition: service_started
+
+    command: ["scheduler"]
+
+  airflow-dag-processor:
+    <<: *airflow-common
+    restart: unless-stopped
+
+    depends_on:
+      airflow-init:
+        condition: service_completed_successfully
+
+    command: ["dag-processor"]
+
+
   postgres:
     image: postgres:17.12
     restart: unless-stopped
@@ -196,3 +292,5 @@ volumes:
   kafka_data:
   spark_checkpoints:
   spark_ivy:
+  airflow_logs:
+  airflow_auth:
