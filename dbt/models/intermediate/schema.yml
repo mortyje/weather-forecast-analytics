@@ -1,0 +1,25 @@
+version: 2
+
+models:
+  - name: int_open_meteo__forecast_hours
+    description: Почасовые прогнозы Open-Meteo.
+
+    columns:
+      - name: event_id
+        description: Идентификатор исходного Kafka-события.
+        data_tests:
+          - not_null
+
+      - name: city_id
+        data_tests:
+          - not_null
+
+      - name: forecast_for
+        description: Целевое время прогноза в UTC.
+        data_tests:
+          - not_null
+
+      - name: hour_position
+        description: Позиция часа в исходном JSON-массиве.
+        data_tests:
+          - not_null
