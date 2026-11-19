@@ -11,3 +11,6 @@ models:
   weather_analytics:
     staging:
       +materialized: view
+
+    intermediate:
+      +materialized: view
