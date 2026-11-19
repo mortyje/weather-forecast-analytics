@@ -110,7 +110,89 @@ services:
           --partitions 3 \
           --replication-factor 1 \
           --config retention.ms=604800000
+        
+
+  database-init:
+    image: postgres:17.12
+    restart: "no"
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+    environment:
+      PGHOST: postgres
+      PGPORT: "5432"
+      PGDATABASE: ${POSTGRES_DB:?POSTGRES_DB is required}
+      PGUSER: ${POSTGRES_USER:?POSTGRES_USER is required}
+      PGPASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+
+    volumes:
+      - ./database/init/001_raw.sql:/sql/001_raw.sql:ro
+
+    entrypoint: ["psql"]
+
+    command:
+      - -X
+      - -v
+      - ON_ERROR_STOP=1
+      - -f
+      - /sql/001_raw.sql
+
+
+  spark:
+    build:
+      context: ./spark
+
+    restart: unless-stopped
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+      database-init:
+        condition: service_completed_successfully
+      kafka:
+        condition: service_healthy
+      kafka-init:
+        condition: service_completed_successfully
+
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      KAFKA_FORECAST_TOPIC: weather.forecasts.raw
+
+      PGHOST: postgres
+      PGPORT: "5432"
+      PGDATABASE: ${POSTGRES_DB:?POSTGRES_DB is required}
+      PGUSER: ${POSTGRES_USER:?POSTGRES_USER is required}
+      PGPASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+
+      TZ: UTC
+
+    ports:
+      - "127.0.0.1:4040:4040"
+
+    volumes:
+      - spark_checkpoints:/opt/spark/checkpoints
+      - spark_ivy:/opt/spark/.ivy2
+
+    entrypoint: ["/opt/spark/bin/spark-submit"]
+
+    command:
+      - --master
+      - local[2]
+      - --driver-memory
+      - 1g
+      - --packages
+      - org.apache.spark:spark-sql-kafka-0-10_2.13:4.2.1
+      - --conf
+      - spark.jars.ivy=/opt/spark/.ivy2
+      - --conf
+      - spark.sql.session.timeZone=UTC
+      - /opt/spark/jobs/kafka_to_raw.py
+
 
 volumes:
   postgres_data:
   kafka_data:
+  spark_checkpoints:
+  spark_ivy:
