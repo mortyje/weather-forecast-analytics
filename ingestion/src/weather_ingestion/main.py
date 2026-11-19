@@ -1,11 +1,14 @@
 import argparse
 import json
+import os
 import sys
 from datetime import UTC, datetime
 from pathlib import Path
 
 import httpx
+from confluent_kafka import KafkaException
 
+from weather_ingestion.kafka_publisher import KafkaPublisher
 from weather_ingestion.locations import load_locations
 from weather_ingestion.open_meteo import (
     FORECAST_URL,
@@ -24,6 +27,19 @@ def main() -> None:
         type=Path,
         default=Path("/app/config/locations.json"),
     )
+    parser.add_argument(
+        "--output",
+        choices=("jsonl", "kafka"),
+        default="jsonl",
+    )
+    parser.add_argument(
+        "--bootstrap-servers",
+        default=os.getenv("KAFKA_BOOTSTRAP_SERVERS", "kafka:9092"),
+    )
+    parser.add_argument(
+        "--topic",
+        default=os.getenv("KAFKA_FORECAST_TOPIC", "weather.forecasts.raw"),
+    )
 
     args = parser.parse_args()
 
@@ -31,6 +47,12 @@ def main() -> None:
         locations = load_locations(args.locations)
     except (OSError, ValueError) as exc:
         parser.exit(2, f"Invalid locations config: {exc}\n")
+
+    publisher = (
+        KafkaPublisher(args.bootstrap_servers, args.topic)
+        if args.output == "kafka"
+        else None
+    )
 
     failed_locations = 0
 
@@ -48,38 +70,50 @@ def main() -> None:
                     latitude=location.latitude,
                     longitude=location.longitude,
                 )
-            except (httpx.HTTPError, ValueError) as exc:
+
+                collected_at = datetime.now(UTC).isoformat()
+
+                message = {
+                    "source": "open_meteo",
+                    "city_id": location.id,
+                    "requested_at_utc": requested_at,
+                    "collected_at_utc": collected_at,
+                    "request": {
+                        "url": FORECAST_URL,
+                        "parameters": build_forecast_params(
+                            location.latitude,
+                            location.longitude,
+                        ),
+                    },
+                    "payload": forecast,
+                }
+
+                if publisher is None:
+                    print(json.dumps(message, ensure_ascii=False))
+                else:
+                    publisher.publish(message)
+
+            except (
+                httpx.HTTPError,
+                ValueError,
+                KafkaException,
+                BufferError,
+            ) as exc:
                 failed_locations += 1
                 print(
-                    f"Failed to collect forecast for {location.id}: {exc}",
+                    f"Failed to process {location.id}: {exc}",
                     file=sys.stderr,
                 )
-                continue
 
-            collected_at = datetime.now(UTC).isoformat()
-
-            message = {
-                "source": "open_meteo",
-                "city_id": location.id,
-                "requested_at_utc": requested_at,
-                "collected_at_utc": collected_at,
-                "request": {
-                    "url": FORECAST_URL,
-                    "parameters": build_forecast_params(
-                        location.latitude,
-                        location.longitude,
-                    ),
-                },
-                "payload": forecast,
-            }
-
-            print(json.dumps(message, ensure_ascii=False))
+    if publisher is not None:
+        try:
+            publisher.flush()
+        except RuntimeError as exc:
+            failed_locations += 1
+            print(str(exc), file=sys.stderr)
 
     if failed_locations:
-        parser.exit(
-            1,
-            f"Forecast collection failed for {failed_locations} location(s)\n",
-        )
+        parser.exit(1, "Forecast collection or delivery failed\n")
 
 
 if __name__ == "__main__":
