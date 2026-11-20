@@ -60,7 +60,7 @@ def serialize_observations(data: pd.DataFrame) -> list[dict]:
 
 def build_message(location, assignment, observations, start, end):
     return {
-        "schema_version": 1,
+        "schema_version": 2,
         "source": SOURCE_ID,
         "source_name": SOURCE_NAME,
         "city_id": location.id,
@@ -74,6 +74,9 @@ def build_message(location, assignment, observations, start, end):
         "station": {
             "id": assignment["station_id"],
             "name": assignment["station_name"],
+            "latitude": float(assignment["station_latitude"]),
+            "longitude": float(assignment["station_longitude"]),
+            "assigned_at_utc": assignment["selected_at"].astimezone(UTC).isoformat(),
         },
         "collected_at_utc": datetime.now(UTC).isoformat(),
         "observation_window": {

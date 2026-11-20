@@ -18,7 +18,10 @@ def get_assignment(
             location_latitude,
             location_longitude,
             station_id,
-            station_name
+            station_name,
+            station_latitude,
+            station_longitude,
+            selected_at
         FROM control.station_assignments
         WHERE location_id = %s
         """,
@@ -46,7 +49,7 @@ def save_assignment(
 ) -> None:
     connection.execute(
         """
-        INSERT INTO control.station_assignments (
+        INSERT INTO control.station_assignments AS current_assignment (
             location_id,
             location_latitude,
             location_longitude,
@@ -81,7 +84,11 @@ def save_assignment(
             precipitation_coverage = EXCLUDED.precipitation_coverage,
             evaluation_period_start = EXCLUDED.evaluation_period_start,
             evaluation_period_end = EXCLUDED.evaluation_period_end,
-            selected_at = NOW()
+            selected_at = CASE
+                WHEN current_assignment.station_id IS DISTINCT FROM EXCLUDED.station_id
+                    THEN NOW()
+                ELSE current_assignment.selected_at
+            END
         """,
         (
             location.id,
