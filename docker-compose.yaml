@@ -229,7 +229,14 @@ services:
           --partitions 3 \
           --replication-factor 1 \
           --config retention.ms=604800000
-        
+
+        /opt/kafka/bin/kafka-topics.sh \
+          --bootstrap-server kafka:9092 \
+          --create \
+          --if-not-exists \
+          --topic weather.observations.raw \
+          --partitions 3 \
+          --replication-factor 1
 
   database-init:
     image: postgres:17.12
@@ -248,6 +255,7 @@ services:
 
     volumes:
       - ./database/init/001_raw.sql:/sql/001_raw.sql:ro
+      - ./database/migrations/002_create_observation_events.sql:/sql/002_create_observation_events.sql:ro
 
     entrypoint: ["psql"]
 
@@ -257,6 +265,8 @@ services:
       - ON_ERROR_STOP=1
       - -f
       - /sql/001_raw.sql
+      - -f
+      - /sql/002_create_observation_events.sql
 
 
   spark:
@@ -278,6 +288,8 @@ services:
     environment:
       KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       KAFKA_FORECAST_TOPIC: weather.forecasts.raw
+      KAFKA_OBSERVATION_TOPIC: weather.observations.raw
+      OBSERVATIONS_CHECKPOINT_PATH: /opt/spark/checkpoints/observations
 
       PGHOST: postgres
       PGPORT: "5432"

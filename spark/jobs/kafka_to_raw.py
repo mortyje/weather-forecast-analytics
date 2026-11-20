@@ -2,7 +2,9 @@ import os
 from itertools import chain, islice
 
 import psycopg
-from pyspark.sql import DataFrame, Row, SparkSession
+from pyspark.sql import DataFrame, SparkSession
+
+from observation_stream import start_observation_stream
 
 INSERT_SQL = """
     INSERT INTO raw.forecast_events (
@@ -86,7 +88,7 @@ def main() -> None:
         .load()
     )
 
-    query = (
+    (
         messages.writeStream
         .foreachBatch(process_batch)
         .option(
@@ -97,7 +99,8 @@ def main() -> None:
         .start()
     )
 
-    query.awaitTermination()
+    start_observation_stream(spark)
+    spark.streams.awaitAnyTermination()
 
 
 if __name__ == "__main__":
