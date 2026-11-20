@@ -46,3 +46,64 @@ models:
       - name: last_seen_at
         data_tests:
           - not_null
+
+  - name: core_forecast_snapshots
+    description: Исторические снимки прогнозов погоды.
+
+    columns:
+      - name: snapshot_id
+        data_tests:
+          - not_null
+          - unique
+
+      - name: location_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('core_locations')
+                field: location_id
+
+      - name: source_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('core_weather_sources')
+                field: source_id
+
+      - name: requested_at
+        data_tests:
+          - not_null
+
+      - name: collected_at
+        data_tests:
+          - not_null
+
+      - name: raw_topic
+        data_tests:
+          - not_null
+
+      - name: raw_partition
+        data_tests:
+          - not_null
+
+      - name: raw_offset
+        data_tests:
+          - not_null
+
+  - name: core_forecast_hours
+    description: Почасовые прогнозы каждого снимка.
+
+    columns:
+      - name: snapshot_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('core_forecast_snapshots')
+                field: snapshot_id
+
+      - name: forecast_for
+        data_tests:
+          - not_null
