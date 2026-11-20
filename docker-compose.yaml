@@ -2,8 +2,11 @@ name: weather-forecast-analytics
 
 
 x-airflow-common: &airflow-common
+  image: weather-forecast-airflow:3.3.2
+
   build:
-    context: ./airflow
+    context: .
+    dockerfile: airflow/Dockerfile
 
   user: "${AIRFLOW_UID:-50000}:0"
 
@@ -31,9 +34,13 @@ x-airflow-common: &airflow-common
     DBT_ENGINE_TARGET_PATH: /tmp/dbt-target
     DBT_ENGINE_LOG_PATH: /tmp/dbt-logs
 
+    KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+    KAFKA_FORECAST_TOPIC: weather.forecasts.raw
+
   volumes:
     - ./airflow/dags:/opt/airflow/dags:ro
     - ./dbt:/opt/airflow/dbt:ro
+    - ./ingestion/config:/opt/airflow/ingestion/config:ro
     - airflow_logs:/opt/airflow/logs
     - airflow_auth:/opt/airflow/auth
 
