@@ -23,3 +23,29 @@ models:
         description: Позиция часа в исходном JSON-массиве.
         data_tests:
           - not_null
+
+  - name: int_meteostat__observation_hours
+    description: Почасовые наблюдения Meteostat с сохранением версий из разных Kafka-событий.
+
+    columns:
+      - name: event_id
+        description: Идентификатор исходного Kafka-события.
+        data_tests:
+          - not_null
+
+      - name: location_id
+        data_tests:
+          - not_null
+
+      - name: station_id
+        data_tests:
+          - not_null
+
+      - name: observed_at
+        description: Время наблюдения в UTC.
+        data_tests:
+          - not_null
+
+      - name: collected_at
+        data_tests:
+          - not_null

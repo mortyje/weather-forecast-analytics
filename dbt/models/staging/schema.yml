@@ -33,3 +33,40 @@ models:
       - name: hourly_data
         data_tests:
           - not_null
+
+  - name: stg_meteostat__observation_events
+    description: События Meteostat после разбора JSON.
+
+    columns:
+      - name: event_id
+        description: Детерминированный идентификатор Kafka-события.
+        data_tests:
+          - not_null
+          - unique
+
+      - name: source_id
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ["meteostat"]
+
+      - name: city_id
+        data_tests:
+          - not_null
+
+      - name: location_id
+        data_tests:
+          - not_null
+
+      - name: station_id
+        data_tests:
+          - not_null
+
+      - name: collected_at
+        data_tests:
+          - not_null
+
+      - name: observations
+        data_tests:
+          - not_null
