@@ -113,3 +113,19 @@ def discover_candidates(
         )
 
     return candidates
+
+
+def fetch_hourly_observations(
+    station_id: str,
+    start: datetime,
+    end: datetime,
+):
+    """Fetch actual hourly observations for a weather station."""
+    timeseries = ms.hourly(
+        ms.Station(id=station_id),
+        start,
+        end,
+        timezone="UTC",
+    )
+
+    return timeseries.fetch(fill=False)
