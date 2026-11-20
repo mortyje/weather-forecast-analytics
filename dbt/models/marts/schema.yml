@@ -1,0 +1,94 @@
+version: 2
+
+models:
+  - name: dim_locations
+    description: Измерение городов аналитического слоя.
+
+    columns:
+      - name: location_id
+        data_tests:
+          - not_null
+          - unique
+
+      - name: name
+        data_tests:
+          - not_null
+
+  - name: dim_stations
+    description: Измерение метеостанций аналитического слоя.
+
+    columns:
+      - name: station_key
+        data_tests:
+          - not_null
+          - unique
+
+      - name: station_id
+        data_tests:
+          - not_null
+
+  - name: fact_forecast_accuracy
+    description: Сопоставление почасового прогноза с фактическим измерением.
+
+    columns:
+      - name: snapshot_id
+        data_tests:
+          - not_null
+
+      - name: location_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_locations')
+                field: location_id
+
+      - name: station_key
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_stations')
+                field: station_key
+
+      - name: forecast_for
+        data_tests:
+          - not_null
+
+      - name: horizon_hours
+        data_tests:
+          - not_null
+
+  - name: forecast_accuracy_by_horizon
+    description: Агрегированные показатели точности по городу и горизонту.
+
+    columns:
+      - name: location_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_locations')
+                field: location_id
+
+      - name: horizon_hours
+        data_tests:
+          - not_null
+
+      - name: metric_name
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - temperature
+                  - humidity
+                  - precipitation
+                  - wind_speed
+
+      - name: forecast_count
+        data_tests:
+          - not_null
+
+      - name: comparison_count
+        data_tests:
+          - not_null
