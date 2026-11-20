@@ -1,0 +1,11 @@
+
+**
+
+!airflow/
+!airflow/Dockerfile
+!airflow/requirements.txt
+
+!ingestion/
+!ingestion/pyproject.toml
+!ingestion/src/
+!ingestion/src/**
