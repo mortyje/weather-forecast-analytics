@@ -21,3 +21,7 @@ models:
       +schema: core
       +on_schema_change: fail
       +full_refresh: false
+
+    marts:
+      +schema: dm
+      +materialized: table
