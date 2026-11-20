@@ -10,20 +10,24 @@ requires-python = ">=3.12,<3.13"
 dependencies = [
     "httpx>=0.28,<1.0",
     "confluent-kafka==2.16.1",
+    "tzdata==2026.6",
+    "meteostat==2.2.3",
+    "psycopg[binary]==3.2.12",
 ]
 
 [project.optional-dependencies]
 dev = [
     "pytest>=8,<10",
     "ruff>=0.13,<1.0",
-    "tzdata==2026.6",
 ]
 
 [project.scripts]
-weather-ingestion = "weather_ingestion.main:main"
+weather-ingestion = "weather_ingestion.forecasts.main:main"
+weather-stations = "weather_ingestion.observations.discovery:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+include = ["weather_ingestion*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

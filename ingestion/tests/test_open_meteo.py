@@ -1,7 +1,7 @@
 import httpx
 import pytest
 
-from weather_ingestion.open_meteo import OpenMeteoClient
+from weather_ingestion.forecasts.open_meteo import OpenMeteoClient
 
 
 def make_payload() -> dict:
@@ -40,9 +40,7 @@ def test_get_forecast_invalid_hourly_series() -> None:
     payload = make_payload()
     payload["hourly"]["temperature_2m"] = [2.5]
 
-    transport = httpx.MockTransport(
-        lambda request: httpx.Response(200, json=payload)
-    )
+    transport = httpx.MockTransport(lambda request: httpx.Response(200, json=payload))
 
     with httpx.Client(transport=transport) as http_client:
         client = OpenMeteoClient(http_client)
@@ -52,9 +50,7 @@ def test_get_forecast_invalid_hourly_series() -> None:
 
 
 def test_get_forecast_http_error() -> None:
-    transport = httpx.MockTransport(
-        lambda request: httpx.Response(500)
-    )
+    transport = httpx.MockTransport(lambda request: httpx.Response(500))
 
     with httpx.Client(transport=transport) as http_client:
         client = OpenMeteoClient(http_client)

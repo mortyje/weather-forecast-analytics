@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from weather_ingestion.locations import load_locations
+from weather_ingestion.shared.locations import load_locations
 
 
 def make_location(**overrides) -> dict:

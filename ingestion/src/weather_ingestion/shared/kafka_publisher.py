@@ -45,11 +45,7 @@ class KafkaPublisher:
         pending_messages = self._producer.flush(25)
 
         if pending_messages:
-            raise RuntimeError(
-                f"{pending_messages} Kafka message(s) were not delivered"
-            )
+            raise RuntimeError(f"{pending_messages} Kafka message(s) were not delivered")
 
         if self._delivery_errors:
-            raise RuntimeError(
-                "Kafka delivery failed: " + "; ".join(self._delivery_errors)
-            )
+            raise RuntimeError("Kafka delivery failed: " + "; ".join(self._delivery_errors))
