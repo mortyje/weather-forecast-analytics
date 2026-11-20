@@ -24,6 +24,7 @@ dev = [
 [project.scripts]
 weather-ingestion = "weather_ingestion.forecasts.main:main"
 weather-stations = "weather_ingestion.observations.discovery:main"
+weather-observations = "weather_ingestion.observations.collection:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
