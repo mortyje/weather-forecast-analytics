@@ -34,8 +34,15 @@ x-airflow-common: &airflow-common
     DBT_ENGINE_TARGET_PATH: /tmp/dbt-target
     DBT_ENGINE_LOG_PATH: /tmp/dbt-logs
 
+    PGHOST: postgres
+    PGPORT: "5432"
+    PGDATABASE: ${POSTGRES_DB}
+    PGUSER: ${POSTGRES_USER}
+    PGPASSWORD: ${POSTGRES_PASSWORD}
+
     KAFKA_BOOTSTRAP_SERVERS: kafka:9092
     KAFKA_FORECAST_TOPIC: weather.forecasts.raw
+    KAFKA_OBSERVATION_TOPIC: weather.observations.raw
 
   volumes:
     - ./airflow/dags:/opt/airflow/dags:ro
