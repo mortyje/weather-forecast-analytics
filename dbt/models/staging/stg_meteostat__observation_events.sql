@@ -55,6 +55,12 @@ SELECT
         AS window_end,
 
     event_data -> 'observations' AS observations,
-    ingested_at
+    ingested_at,
+    (event_data #>> '{station,latitude}')::NUMERIC(9,6)
+        AS station_latitude,
+    (event_data #>> '{station,longitude}')::NUMERIC(9,6)
+        AS station_longitude,
+    (event_data #>> '{station,assigned_at_utc}')::TIMESTAMPTZ
+        AS station_assigned_at
 
 FROM meteostat_events

@@ -107,3 +107,81 @@ models:
       - name: forecast_for
         data_tests:
           - not_null
+
+  - name: core_weather_stations
+    description: Справочник метеостанций.
+
+    columns:
+      - name: station_key
+        data_tests:
+          - not_null
+          - unique
+
+      - name: source_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('core_weather_sources')
+                field: source_id
+
+      - name: station_id
+        data_tests:
+          - not_null
+
+      - name: name
+        data_tests:
+          - not_null
+
+  - name: core_location_station_assignments
+    description: История назначений станций городам.
+
+    columns:
+      - name: assignment_id
+        data_tests:
+          - not_null
+          - unique
+
+      - name: location_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('core_locations')
+                field: location_id
+
+      - name: station_key
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('core_weather_stations')
+                field: station_key
+
+      - name: valid_from
+        data_tests:
+          - not_null
+
+  - name: core_weather_observations
+    description: Актуальные почасовые измерения метеостанций.
+
+    columns:
+      - name: station_key
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('core_weather_stations')
+                field: station_key
+
+      - name: observed_at
+        data_tests:
+          - not_null
+
+      - name: source_event_id
+        data_tests:
+          - not_null
+
+      - name: source_collected_at
+        data_tests:
+          - not_null

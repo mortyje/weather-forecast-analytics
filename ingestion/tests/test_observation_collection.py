@@ -1,6 +1,11 @@
+from datetime import datetime, timedelta, timezone
+from decimal import Decimal
+from types import SimpleNamespace
+
 import pandas as pd
 
 from weather_ingestion.observations.collection import (
+    build_message,
     numeric_or_none,
     serialize_observations,
 )
@@ -57,3 +62,35 @@ def test_missing_parameter_becomes_none():
     assert observations[0]["temperature_c"] == 5.0
     assert observations[0]["humidity_pct"] is None
     assert observations[0]["wind_speed_kmh"] is None
+
+
+def test_observation_message_contains_station_metadata():
+    location = SimpleNamespace(
+        id="moscow",
+        name="Москва",
+        latitude=55.75,
+        longitude=37.62,
+        timezone="Europe/Moscow",
+    )
+    assignment = {
+        "station_id": "UUEE0",
+        "station_name": "Moscow Airport",
+        "station_latitude": Decimal("55.97"),
+        "station_longitude": Decimal("37.41"),
+        "selected_at": datetime(2026, 11, 20, 11, 0, tzinfo=timezone(timedelta(hours=3))),
+    }
+    start = datetime(2026, 11, 11)
+    end = datetime(2026, 11, 18)
+
+    message = build_message(location, assignment, [], start, end)
+
+    assert message["schema_version"] == 2
+    assert message["station"] == {
+        "id": "UUEE0",
+        "name": "Moscow Airport",
+        "latitude": 55.97,
+        "longitude": 37.41,
+        "assigned_at_utc": "2026-11-20T08:00:00+00:00",
+    }
+    assert isinstance(message["station"]["latitude"], float)
+    assert isinstance(message["station"]["longitude"], float)
