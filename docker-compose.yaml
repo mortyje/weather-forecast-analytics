@@ -155,6 +155,11 @@ services:
     environment:
       KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       KAFKA_FORECAST_TOPIC: weather.forecasts.raw
+      PGHOST: postgres
+      PGPORT: "5432"
+      PGDATABASE: ${POSTGRES_DB}
+      PGUSER: ${POSTGRES_USER}
+      PGPASSWORD: ${POSTGRES_PASSWORD}
 
     command:
       - --locations

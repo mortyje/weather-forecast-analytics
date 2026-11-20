@@ -15,11 +15,7 @@ class Location:
 
 
 def is_valid_coordinate(value: object, minimum: float, maximum: float) -> bool:
-    return (
-        type(value) in (int, float)
-        and math.isfinite(value)
-        and minimum <= value <= maximum
-    )
+    return type(value) in (int, float) and math.isfinite(value) and minimum <= value <= maximum
 
 
 def load_locations(path: Path) -> list[Location]:
@@ -62,9 +58,7 @@ def load_locations(path: Path) -> list[Location]:
         try:
             ZoneInfo(timezone)
         except (ZoneInfoNotFoundError, ValueError) as exc:
-            raise ValueError(
-                f"Invalid timezone for location: {location_id}"
-            ) from exc
+            raise ValueError(f"Invalid timezone for location: {location_id}") from exc
 
         locations.append(
             Location(

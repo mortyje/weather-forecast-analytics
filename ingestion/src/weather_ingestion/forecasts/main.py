@@ -8,21 +8,19 @@ from pathlib import Path
 import httpx
 from confluent_kafka import KafkaException
 
-from weather_ingestion.kafka_publisher import KafkaPublisher
-from weather_ingestion.locations import load_locations
-from weather_ingestion.open_meteo import (
+from weather_ingestion.forecasts.open_meteo import (
     FORECAST_URL,
     SOURCE_ID,
     SOURCE_NAME,
     OpenMeteoClient,
     build_forecast_params,
 )
+from weather_ingestion.shared.kafka_publisher import KafkaPublisher
+from weather_ingestion.shared.locations import load_locations
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(
-        description="Collect weather forecasts from Open-Meteo"
-    )
+    parser = argparse.ArgumentParser(description="Collect weather forecasts from Open-Meteo")
 
     parser.add_argument(
         "--locations",
@@ -51,9 +49,7 @@ def main() -> None:
         parser.exit(2, f"Invalid locations config: {exc}\n")
 
     publisher = (
-        KafkaPublisher(args.bootstrap_servers, args.topic)
-        if args.output == "kafka"
-        else None
+        KafkaPublisher(args.bootstrap_servers, args.topic) if args.output == "kafka" else None
     )
 
     failed_locations = 0

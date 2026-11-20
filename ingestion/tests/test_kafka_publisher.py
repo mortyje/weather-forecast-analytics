@@ -3,7 +3,7 @@ from unittest.mock import Mock
 
 import pytest
 
-from weather_ingestion import kafka_publisher
+from weather_ingestion.shared import kafka_publisher
 
 
 def make_publisher(monkeypatch, fake_producer):
