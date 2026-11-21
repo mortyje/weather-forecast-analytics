@@ -70,6 +70,7 @@
       "options": {
         "orientation": "vertical",
         "xField": "Горизонт",
+        "xTickLabelSpacing": 100,
         "stacking": "none",
         "showValue": "never",
         "groupWidth": 0.7,
@@ -121,6 +122,7 @@
       "options": {
         "orientation": "vertical",
         "xField": "Горизонт",
+        "xTickLabelSpacing": 100,
         "stacking": "none",
         "showValue": "never",
         "legend": {
