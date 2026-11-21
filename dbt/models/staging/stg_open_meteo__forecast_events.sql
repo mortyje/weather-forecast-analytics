@@ -7,6 +7,7 @@ WITH source_events AS (
         payload::JSONB AS event_data,
         ingested_at
     FROM {{ source('weather_raw', 'forecast_events') }}
+    WHERE COALESCE(payload::JSONB ->> 'forecast_kind', 'live') = 'live'
 ),
 
 open_meteo_events AS (

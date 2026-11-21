@@ -28,6 +28,33 @@ def build_forecast_params(latitude: float, longitude: float) -> dict:
     }
 
 
+def validate_forecast_response(payload: Any) -> dict[str, Any]:
+    if not isinstance(payload, dict):
+        raise ValueError("Invalid API response")
+
+    hourly = payload.get("hourly")
+
+    if not isinstance(hourly, dict):
+        raise ValueError("Missing or invalid hourly data")
+
+    timestamps = hourly.get("time")
+
+    if (
+        not isinstance(timestamps, list)
+        or not timestamps
+        or not all(isinstance(value, str) for value in timestamps)
+    ):
+        raise ValueError("Missing or invalid hourly timestamps")
+
+    for variable in HOURLY_VARIABLES:
+        values = hourly.get(variable)
+
+        if not isinstance(values, list) or len(values) != len(timestamps):
+            raise ValueError(f"Invalid hourly series: {variable}")
+
+    return payload
+
+
 class OpenMeteoClient:
     def __init__(self, http_client: httpx.Client) -> None:
         self._http_client = http_client
@@ -39,29 +66,4 @@ class OpenMeteoClient:
         )
         response.raise_for_status()
 
-        payload = response.json()
-
-        if not isinstance(payload, dict):
-            raise ValueError("Invalid API response")
-
-        hourly = payload.get("hourly")
-
-        if not isinstance(hourly, dict):
-            raise ValueError("Missing or invalid hourly data")
-
-        timestamps = hourly.get("time")
-
-        if (
-            not isinstance(timestamps, list)
-            or not timestamps
-            or not all(isinstance(value, str) for value in timestamps)
-        ):
-            raise ValueError("Missing or invalid hourly timestamps")
-
-        for variable in HOURLY_VARIABLES:
-            values = hourly.get(variable)
-
-            if not isinstance(values, list) or len(values) != len(timestamps):
-                raise ValueError(f"Invalid hourly series: {variable}")
-
-        return payload
+        return validate_forecast_response(response.json())

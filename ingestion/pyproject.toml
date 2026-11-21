@@ -26,6 +26,7 @@ weather-ingestion = "weather_ingestion.forecasts.main:main"
 weather-stations = "weather_ingestion.observations.discovery:main"
 weather-observations = "weather_ingestion.observations.collection:main"
 weather-observations-backfill = "weather_ingestion.observations.backfill:main"
+weather-forecasts-backfill = "weather_ingestion.forecasts.backfill:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

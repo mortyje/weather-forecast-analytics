@@ -75,6 +75,7 @@ def main() -> None:
                     "schema_version": 2,
                     "source": SOURCE_ID,
                     "source_name": SOURCE_NAME,
+                    "forecast_kind": "live",
                     "city_id": location.id,
                     "location": {
                         "id": location.id,
