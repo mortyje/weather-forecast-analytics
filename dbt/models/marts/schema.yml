@@ -92,3 +92,39 @@ models:
       - name: comparison_count
         data_tests:
           - not_null
+
+  - name: pipeline_freshness
+    description: Мониторинг свежести поступающих погодных данных.
+
+    columns:
+      - name: location_id
+        data_tests:
+          - not_null
+
+      - name: source_id
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - open_meteo
+                  - meteostat
+
+      - name: freshness_status
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - fresh
+                  - stale
+                  - no_data
+                  - invalid_time
+
+      - name: event_count
+        data_tests:
+          - not_null
+
+      - name: max_lag_hours
+        data_tests:
+          - not_null

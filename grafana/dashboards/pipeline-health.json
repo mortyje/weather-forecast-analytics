@@ -1,0 +1,135 @@
+{
+  "id": null,
+  "uid": "weather-pipeline-health",
+  "title": "Weather Pipeline Health",
+  "description": "Data freshness monitoring by location and source",
+  "tags": [
+    "weather",
+    "data-engineering",
+    "monitoring"
+  ],
+  "timezone": "browser",
+  "schemaVersion": 41,
+  "version": 1,
+  "editable": false,
+  "refresh": "1m",
+  "time": {
+    "from": "now-24h",
+    "to": "now"
+  },
+  "panels": [
+    {
+      "id": 1,
+      "title": "Актуальные источники",
+      "type": "stat",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "weather-dwh"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 12,
+        "h": 5
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "none",
+        "graphMode": "none",
+        "reduceOptions": {
+          "values": false,
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": ""
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "editorMode": "code",
+          "rawQuery": true,
+          "format": "table",
+          "rawSql": "SELECT COUNT(*) AS fresh_sources FROM dm.pipeline_freshness WHERE freshness_status = 'fresh'"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "Проблемные источники",
+      "type": "stat",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "weather-dwh"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 0,
+        "w": 12,
+        "h": 5
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "none",
+        "graphMode": "none",
+        "reduceOptions": {
+          "values": false,
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": ""
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "editorMode": "code",
+          "rawQuery": true,
+          "format": "table",
+          "rawSql": "SELECT COUNT(*) AS problem_sources FROM dm.pipeline_freshness WHERE freshness_status <> 'fresh'"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Свежесть данных по городам",
+      "type": "table",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "weather-dwh"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 5,
+        "w": 24,
+        "h": 12
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "options": {
+        "showHeader": true
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "editorMode": "code",
+          "rawQuery": true,
+          "format": "table",
+          "rawSql": "SELECT location_name AS \"Город\", source_id AS \"Источник\", last_collected_at AS \"Последний сбор\", last_ingested_at AS \"Последняя загрузка Raw\", age_hours AS \"Возраст, ч\", max_lag_hours AS \"Порог, ч\", freshness_status AS \"Статус\", event_count AS \"Событий\" FROM dm.pipeline_freshness ORDER BY CASE freshness_status WHEN 'no_data' THEN 0 WHEN 'invalid_time' THEN 1 WHEN 'stale' THEN 2 ELSE 3 END, location_name, source_id"
+        }
+      ]
+    }
+  ]
+}
