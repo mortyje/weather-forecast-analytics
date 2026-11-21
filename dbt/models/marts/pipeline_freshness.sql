@@ -35,6 +35,7 @@ source_events AS (
         collected_at,
         ingested_at
     FROM {{ ref('stg_meteostat__observation_events') }}
+    WHERE ingestion_mode = 'scheduled'
 ),
 
 latest_events AS (

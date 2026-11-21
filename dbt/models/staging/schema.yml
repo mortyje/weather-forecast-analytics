@@ -51,6 +51,13 @@ models:
               arguments:
                 values: ["meteostat"]
 
+      - name: ingestion_mode
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ["scheduled", "backfill"]
+
       - name: city_id
         data_tests:
           - not_null

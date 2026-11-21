@@ -58,10 +58,13 @@ def serialize_observations(data: pd.DataFrame) -> list[dict]:
     return observations
 
 
-def build_message(location, assignment, observations, start, end):
+def build_message(
+    location, assignment, observations, start, end, ingestion_mode: str = "scheduled"
+):
     return {
         "schema_version": 2,
         "source": SOURCE_ID,
+        "ingestion_mode": ingestion_mode,
         "source_name": SOURCE_NAME,
         "city_id": location.id,
         "location": {
