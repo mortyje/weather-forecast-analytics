@@ -34,6 +34,8 @@ SELECT
         AS schema_version,
     event_data ->> 'source' AS source_id,
     event_data ->> 'source_name' AS source_name,
+    COALESCE(NULLIF(event_data ->> 'ingestion_mode', ''), 'scheduled')
+        AS ingestion_mode,
     event_data ->> 'city_id' AS city_id,
 
     event_data #>> '{location,id}' AS location_id,
