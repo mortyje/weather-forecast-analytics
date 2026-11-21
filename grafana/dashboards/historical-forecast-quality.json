@@ -71,6 +71,7 @@
       "options": {
         "orientation": "vertical",
         "xField": "Горизонт",
+        "xTickLabelSpacing": 100,
         "stacking": "none",
         "showValue": "never",
         "groupWidth": 0.7,
@@ -115,6 +116,7 @@
       "options": {
         "orientation": "vertical",
         "xField": "Горизонт",
+        "xTickLabelSpacing": 100,
         "stacking": "none",
         "showValue": "never",
         "legend": {
@@ -134,7 +136,7 @@
     {
       "id": 3,
       "title": "Покрытие температурных прогнозов",
-      "description": "Share of eligible archived forecast rows with actual temperature",
+      "description": "Доля прогнозов с измерением среди строк, где есть прогноз температуры.",
       "type": "stat",
       "datasource": {
         "type": "grafana-postgresql-datasource",
