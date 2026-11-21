@@ -128,3 +128,52 @@ models:
       - name: max_lag_hours
         data_tests:
           - not_null
+
+  - name: fact_archive_forecast_accuracy
+    description: Сопоставление архивных прогнозов с наблюдениями.
+
+    columns:
+      - name: archive_run_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('core_archive_forecast_runs')
+                field: archive_run_id
+
+      - name: forecast_for
+        data_tests:
+          - not_null
+
+      - name: station_selection_method
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - historical_assignment
+                  - retrospective_fallback
+                  - no_station
+
+  - name: archive_accuracy_by_horizon
+    description: Метрики качества архивных прогнозов по горизонту.
+
+    columns:
+      - name: model_horizon_hours
+        data_tests:
+          - not_null
+
+      - name: metric_name
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - temperature
+                  - humidity
+                  - precipitation
+                  - wind_speed
+
+      - name: comparison_count
+        data_tests:
+          - not_null

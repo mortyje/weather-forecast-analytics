@@ -77,3 +77,28 @@ models:
       - name: observations
         data_tests:
           - not_null
+
+  - name: stg_open_meteo__archive_events
+    description: Архивные выпуски Open-Meteo Single Runs API.
+
+    columns:
+      - name: event_id
+        data_tests:
+          - not_null
+          - unique
+
+      - name: location_id
+        data_tests:
+          - not_null
+
+      - name: model_id
+        data_tests:
+          - not_null
+
+      - name: model_run_at
+        data_tests:
+          - not_null
+
+      - name: collected_at
+        data_tests:
+          - not_null
