@@ -329,6 +329,57 @@ services:
       - /opt/spark/jobs/kafka_to_raw.py
 
 
+  grafana-db-setup:
+    image: postgres:17.12
+    profiles:
+      - setup
+    restart: "no"
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+    environment:
+      PGHOST: postgres
+      PGPORT: "5432"
+      PGDATABASE: ${POSTGRES_DB:?POSTGRES_DB is required}
+      PGUSER: ${POSTGRES_USER:?POSTGRES_USER is required}
+      PGPASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      GRAFANA_READER_PASSWORD: ${GRAFANA_READER_PASSWORD:?GRAFANA_READER_PASSWORD is required}
+
+    volumes:
+      - ./database/migrations/003_create_grafana_reader.sql:/setup.sql:ro
+
+    entrypoint: ["psql"]
+    command: ["-X", "-v", "ON_ERROR_STOP=1", "-f", "/setup.sql"]
+
+
+  grafana:
+    image: grafana/grafana:13.3.1
+    restart: unless-stopped
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+    ports:
+      - "127.0.0.1:3000:3000"
+
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?GRAFANA_ADMIN_PASSWORD is required}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+      GRAFANA_PG_DATABASE: ${POSTGRES_DB:?POSTGRES_DB is required}
+      GRAFANA_READER_PASSWORD: ${GRAFANA_READER_PASSWORD:?GRAFANA_READER_PASSWORD is required}
+
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
+      - ./grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./grafana/dashboards:/etc/grafana/dashboards:ro
+
+
 volumes:
   postgres_data:
   kafka_data:
@@ -336,3 +387,4 @@ volumes:
   spark_ivy:
   airflow_logs:
   airflow_auth:
+  grafana_data:

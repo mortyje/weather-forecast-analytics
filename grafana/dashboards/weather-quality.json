@@ -1,0 +1,250 @@
+{
+  "id": null,
+  "uid": "weather-forecast-quality",
+  "title": "Weather Forecast Quality",
+  "description": "Analysis of Open-Meteo forecast accuracy against Meteostat observations",
+  "tags": [
+    "weather",
+    "data-engineering",
+    "forecast-quality"
+  ],
+  "timezone": "browser",
+  "schemaVersion": 41,
+  "version": 1,
+  "editable": false,
+  "refresh": "5m",
+  "time": {
+    "from": "now-14d",
+    "to": "now"
+  },
+  "annotations": {
+    "list": []
+  },
+  "templating": {
+    "list": [
+      {
+        "name": "city",
+        "label": "Город",
+        "type": "query",
+        "hide": 0,
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "weather-dwh"
+        },
+        "query": "SELECT name AS __text, location_id AS __value FROM dm.dim_locations ORDER BY name",
+        "definition": "SELECT name AS __text, location_id AS __value FROM dm.dim_locations ORDER BY name",
+        "refresh": 1,
+        "sort": 1,
+        "multi": false,
+        "includeAll": false,
+        "options": [],
+        "current": {
+          "text": "Москва",
+          "value": "moscow"
+        }
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "title": "MAE и RMSE температуры по горизонту",
+      "type": "barchart",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "weather-dwh"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 15,
+        "h": 9
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "celsius",
+          "decimals": 2
+        },
+        "overrides": []
+      },
+      "options": {
+        "orientation": "vertical",
+        "xField": "Горизонт",
+        "stacking": "none",
+        "showValue": "never",
+        "groupWidth": 0.7,
+        "barWidth": 0.9,
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "weather-dwh"
+          },
+          "editorMode": "code",
+          "rawQuery": true,
+          "format": "table",
+          "rawSql": "SELECT LPAD(horizon_hours::TEXT, 3, '0') || ' ч' AS \"Горизонт\",\nROUND(AVG(ABS(temperature_error_c::NUMERIC)), 3)::DOUBLE PRECISION AS \"MAE\",\nROUND(SQRT(AVG(POWER(temperature_error_c::NUMERIC, 2))), 3)::DOUBLE PRECISION AS \"RMSE\"\nFROM dm.fact_forecast_accuracy\nWHERE location_id = ${city:sqlstring}\n  AND $__timeFilter(forecast_for)\n  AND temperature_error_c IS NOT NULL\nGROUP BY horizon_hours\nORDER BY horizon_hours"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "Bias температуры по горизонту",
+      "type": "barchart",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "weather-dwh"
+      },
+      "gridPos": {
+        "x": 15,
+        "y": 0,
+        "w": 9,
+        "h": 9
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "celsius",
+          "decimals": 2
+        },
+        "overrides": []
+      },
+      "options": {
+        "orientation": "vertical",
+        "xField": "Горизонт",
+        "stacking": "none",
+        "showValue": "never",
+        "legend": {
+          "showLegend": false
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "weather-dwh"
+          },
+          "editorMode": "code",
+          "rawQuery": true,
+          "format": "table",
+          "rawSql": "SELECT LPAD(horizon_hours::TEXT, 3, '0') || ' ч' AS \"Горизонт\",\nROUND(AVG(temperature_error_c::NUMERIC), 3)::DOUBLE PRECISION AS \"Bias\"\nFROM dm.fact_forecast_accuracy\nWHERE location_id = ${city:sqlstring}\n  AND $__timeFilter(forecast_for)\n  AND temperature_error_c IS NOT NULL\nGROUP BY horizon_hours\nORDER BY horizon_hours"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Покрытие прогнозов наблюдениями",
+      "description": "Percentage of elapsed forecast hours with an actual temperature measurement",
+      "type": "stat",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "weather-dwh"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 9,
+        "w": 6,
+        "h": 9
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "decimals": 1,
+          "min": 0,
+          "max": 100
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "none",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "textMode": "auto",
+        "reduceOptions": {
+          "values": false,
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": ""
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "weather-dwh"
+          },
+          "editorMode": "code",
+          "rawQuery": true,
+          "format": "table",
+          "rawSql": "SELECT ROUND(100.0 * COUNT(*) FILTER (WHERE temperature_actual_c IS NOT NULL) / NULLIF(COUNT(*), 0), 1)::DOUBLE PRECISION AS coverage_pct\nFROM dm.fact_forecast_accuracy\nWHERE location_id = ${city:sqlstring}\n  AND $__timeFilter(forecast_for)\n  AND forecast_for <= NOW()"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Температура: прогноз и факт",
+      "type": "timeseries",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "weather-dwh"
+      },
+      "gridPos": {
+        "x": 6,
+        "y": 9,
+        "w": 18,
+        "h": 9
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "celsius",
+          "decimals": 1,
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "showPoints": "auto",
+            "spanNulls": false
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "weather-dwh"
+          },
+          "editorMode": "code",
+          "rawQuery": true,
+          "format": "time_series",
+          "rawSql": "WITH ranked_forecasts AS (\n    SELECT\n        forecast_for AS time,\n        temperature_forecast_c,\n        temperature_actual_c,\n        ROW_NUMBER() OVER (\n            PARTITION BY forecast_for\n            ORDER BY collected_at DESC, snapshot_id DESC\n        ) AS forecast_rank\n    FROM dm.fact_forecast_accuracy\n    WHERE location_id = ${city:sqlstring}\n      AND $__timeFilter(forecast_for)\n      AND collected_at <= forecast_for - INTERVAL '1 hour'\n)\nSELECT\n    time,\n    temperature_forecast_c::DOUBLE PRECISION AS \"Прогноз, °C\",\n    temperature_actual_c::DOUBLE PRECISION AS \"Факт, °C\"\nFROM ranked_forecasts\nWHERE forecast_rank = 1\nORDER BY time"
+        }
+      ]
+    }
+  ]
+}
