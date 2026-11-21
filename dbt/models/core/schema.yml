@@ -185,3 +185,44 @@ models:
       - name: source_collected_at
         data_tests:
           - not_null
+
+  - name: core_archive_forecast_runs
+    description: Уникальные исторические выпуски погодных моделей.
+
+    columns:
+      - name: archive_run_id
+        data_tests:
+          - not_null
+          - unique
+
+      - name: location_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('core_locations')
+                field: location_id
+
+      - name: model_run_at
+        data_tests:
+          - not_null
+
+  - name: core_archive_forecast_hours
+    description: Почасовые значения выбранных версий архивных выпусков.
+
+    columns:
+      - name: archive_run_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('core_archive_forecast_runs')
+                field: archive_run_id
+
+      - name: forecast_for
+        data_tests:
+          - not_null
+
+      - name: model_horizon_hours
+        data_tests:
+          - not_null

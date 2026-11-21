@@ -1,0 +1,227 @@
+{
+  "id": null,
+  "uid": "historical-forecast-quality",
+  "title": "Historical Forecast Accuracy",
+  "description": "Retrospective accuracy of ECMWF IFS model runs against Meteostat observations",
+  "tags": [
+    "weather",
+    "ecmwf",
+    "historical",
+    "forecast-quality"
+  ],
+  "timezone": "browser",
+  "schemaVersion": 41,
+  "version": 1,
+  "editable": false,
+  "refresh": "5m",
+  "time": {
+    "from": "2026-10-01T00:00:00Z",
+    "to": "2026-11-01T00:00:00Z"
+  },
+  "annotations": {
+    "list": []
+  },
+  "templating": {
+    "list": [
+      {
+        "name": "city",
+        "label": "Город",
+        "type": "query",
+        "hide": 0,
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "weather-dwh"
+        },
+        "query": "SELECT name AS __text, location_id AS __value FROM dm.dim_locations ORDER BY name",
+        "definition": "SELECT name AS __text, location_id AS __value FROM dm.dim_locations ORDER BY name",
+        "refresh": 1,
+        "sort": 1,
+        "multi": false,
+        "includeAll": false,
+        "options": [],
+        "current": {
+          "text": "Москва",
+          "value": "moscow"
+        }
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "title": "Температура: MAE и RMSE по горизонту",
+      "type": "barchart",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "weather-dwh"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 15,
+        "h": 9
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "celsius",
+          "decimals": 2
+        },
+        "overrides": []
+      },
+      "options": {
+        "orientation": "vertical",
+        "xField": "Горизонт",
+        "stacking": "none",
+        "showValue": "never",
+        "groupWidth": 0.7,
+        "barWidth": 0.9,
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "editorMode": "code",
+          "rawQuery": true,
+          "format": "table",
+          "rawSql": "SELECT LPAD(model_horizon_hours::TEXT, 3, '0') || ' ч' AS \"Горизонт\", ROUND(AVG(ABS(temperature_error_c)), 3)::DOUBLE PRECISION AS \"MAE\", ROUND(SQRT(AVG(POWER(temperature_error_c, 2))), 3)::DOUBLE PRECISION AS \"RMSE\" FROM dm.fact_archive_forecast_accuracy WHERE location_id = ${city:sqlstring} AND forecast_for >= $__timeFrom() AND forecast_for < $__timeTo() AND temperature_error_c IS NOT NULL GROUP BY model_horizon_hours ORDER BY model_horizon_hours"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "Bias температуры по горизонту",
+      "type": "barchart",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "weather-dwh"
+      },
+      "gridPos": {
+        "x": 15,
+        "y": 0,
+        "w": 9,
+        "h": 9
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "celsius",
+          "decimals": 2
+        },
+        "overrides": []
+      },
+      "options": {
+        "orientation": "vertical",
+        "xField": "Горизонт",
+        "stacking": "none",
+        "showValue": "never",
+        "legend": {
+          "showLegend": false
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "editorMode": "code",
+          "rawQuery": true,
+          "format": "table",
+          "rawSql": "SELECT LPAD(model_horizon_hours::TEXT, 3, '0') || ' ч' AS \"Горизонт\", ROUND(AVG(temperature_error_c), 3)::DOUBLE PRECISION AS \"Bias\" FROM dm.fact_archive_forecast_accuracy WHERE location_id = ${city:sqlstring} AND forecast_for >= $__timeFrom() AND forecast_for < $__timeTo() AND temperature_error_c IS NOT NULL GROUP BY model_horizon_hours ORDER BY model_horizon_hours"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Покрытие температурных прогнозов",
+      "description": "Share of eligible archived forecast rows with actual temperature",
+      "type": "stat",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "weather-dwh"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 9,
+        "w": 6,
+        "h": 9
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "decimals": 1,
+          "min": 0,
+          "max": 100
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "none",
+        "graphMode": "none",
+        "reduceOptions": {
+          "values": false,
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": ""
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "editorMode": "code",
+          "rawQuery": true,
+          "format": "table",
+          "rawSql": "SELECT ROUND(100.0 * COUNT(*) FILTER (WHERE temperature_error_c IS NOT NULL) / NULLIF(COUNT(*), 0), 1)::DOUBLE PRECISION AS coverage_pct FROM dm.fact_archive_forecast_accuracy WHERE location_id = ${city:sqlstring} AND forecast_for >= $__timeFrom() AND forecast_for < $__timeTo() AND temperature_forecast_c IS NOT NULL AND forecast_for <= NOW()"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Температура: последний архивный прогноз и факт",
+      "type": "timeseries",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "weather-dwh"
+      },
+      "gridPos": {
+        "x": 6,
+        "y": 9,
+        "w": 18,
+        "h": 9
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "celsius",
+          "decimals": 1,
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "showPoints": "auto",
+            "spanNulls": false
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "editorMode": "code",
+          "rawQuery": true,
+          "format": "time_series",
+          "rawSql": "WITH ranked AS (SELECT forecast_for AS time, temperature_forecast_c, temperature_actual_c, ROW_NUMBER() OVER (PARTITION BY forecast_for ORDER BY model_run_at DESC, archive_run_id DESC) AS version_number FROM dm.fact_archive_forecast_accuracy WHERE location_id = ${city:sqlstring} AND forecast_for >= $__timeFrom() AND forecast_for < $__timeTo()) SELECT time, temperature_forecast_c::DOUBLE PRECISION AS \"Прогноз, °C\", temperature_actual_c::DOUBLE PRECISION AS \"Факт, °C\" FROM ranked WHERE version_number = 1 ORDER BY time"
+        }
+      ]
+    }
+  ]
+}

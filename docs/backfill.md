@@ -59,3 +59,30 @@ docker compose -f docker-compose.yaml run --rm -T \
 - Поле `station.assigned_at_utc` сохраняет реальное время назначения текущей станции. Оно может быть позже запрошенного периода. Для сопоставления с прогнозами требуется назначение, действовавшее на целевой час.
 - Доступность измерений зависит от станции и периода. Пропущенные часы остаются пропущенными, модельное заполнение отключено.
 - События помечаются `ingestion_mode=backfill` в Raw и Staging. В `dm.pipeline_freshness` для Meteostat учитываются только регулярные события.
+
+
+## Архивные прогнозы Open-Meteo
+
+Команда `weather-forecasts-backfill` загружает отдельные выпуски ECMWF IFS (`ecmwf_ifs`) в 00:00, 06:00, 12:00 и 18:00 UTC. Для каждого выпуска и города запрос задаёт 168 почасовых значений в GMT. Ответ вместе с массивами и единицами сохраняется в поле `forecast`. [Документация Single Runs API](https://open-meteo.com/en/docs/single-runs-api)
+
+`model_run_at_utc` хранит историческое время инициализации модели. `collected_at_utc` фиксирует, когда CLI получил прогноз. События с `forecast_kind=archived_run` поступают в существующий Kafka-топик `weather.forecasts.raw` и сохраняются в Raw. Live-модель dbt пропускает только `forecast_kind=live` и старые события без поля. Архивная обработка в Core будет отдельным этапом.
+
+```bash
+docker compose -f docker-compose.yaml run --rm -T \
+  --entrypoint weather-forecasts-backfill ingestion \
+  --locations /app/config/locations.json \
+  --start 2026-10-01 --end 2026-10-03 --dry-run
+```
+
+| Параметр | Назначение |
+| --- | --- |
+| `--start`, `--end` | Первый и последний дни инициализации включительно, формат `YYYY-MM-DD` в UTC. |
+| `--locations` | Путь к `locations.json`. По умолчанию `/app/config/locations.json`. |
+| `--city` | Идентификатор города. По умолчанию выбираются все города. |
+| `--output` | `jsonl` для вывода событий или `kafka` для загрузки в Raw. По умолчанию `jsonl`. |
+| `--dry-run` | Показать план запросов без обращений к Open-Meteo и Kafka. |
+| `--sleep-seconds` | Пауза между запросами. По умолчанию 1 секунда. |
+
+Для пробного сбора за один день задайте одинаковые `--start` и `--end`, укажите `--city moscow --output jsonl` и уберите `--dry-run`. Перед публикацией примените обновлённую Staging-модель через `weather_dwh_transform`. Для публикации используйте `--output kafka`. Адрес брокера и топик задаются через `KAFKA_BOOTSTRAP_SERVERS` и `KAFKA_FORECAST_TOPIC`.
+
+CLI продолжит работу после ошибки отдельного запроса и вернёт ненулевой код при ошибках загрузки или доставки. При повторной загрузке успешные выпуски появятся в Raw повторно. Их можно различать по ключу `(location_id, model_id, model_run_at_utc)`.

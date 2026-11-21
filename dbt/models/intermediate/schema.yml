@@ -49,3 +49,22 @@ models:
       - name: collected_at
         data_tests:
           - not_null
+
+  - name: int_open_meteo__archive_hours
+    description: Почасовые значения архивного выпуска Open-Meteo с сохранением версий Kafka-событий.
+
+    columns:
+      - name: event_id
+        description: Идентификатор версии архивного события.
+        data_tests:
+          - not_null
+
+      - name: forecast_for
+        description: Целевой час прогноза в UTC.
+        data_tests:
+          - not_null
+
+      - name: model_horizon_hours
+        description: Число часов от инициализации модели до целевого часа.
+        data_tests:
+          - not_null
